@@ -1,0 +1,104 @@
+.markus-container {
+  background: #f2f2f2;
+  border: 8px solid #f2f2f2;
+  -webkit-border-radius: 8px;
+  -webkit-box-shadow: rgba(0, 0, 0, 0.25) 0px 1px 4px;
+  -moz-border-radius: 8px;
+  -moz-box-shadow: rgba(0, 0, 0, 0.25) 0px 1px 4px;
+}
+
+.markus-editor-pane,
+.markus-preview-pane {
+  clear: left;
+  background: white;
+}
+
+.markus-editor-pane {
+  padding-right: 8px;
+}
+
+.markus-editor {
+  border: none;
+  display: block;
+  width: 100%;
+  padding: 4px;
+  background: white;
+  font-family: Monaco, Courier, monospace;
+}
+
+.markus-preview-pane {
+  padding: 4px;
+}
+
+.markus-toolbar-row {
+  margin: 0px 4px 4px 0px;
+  padding: 0px 0px 0px 4px;
+  height: 32px;
+  background: #ccc;
+  float: left;
+  -webkit-border-radius: 4px;
+  -moz-border-radius: 4px;
+}
+
+.markus-toolbar li {
+  margin: 0px;
+  padding: 0px;
+  list-style: none;
+  display: inline;
+}
+
+.markus-toolbar li a {
+  float: left;
+  position: relative;
+  height: 22px;
+  overflow: hidden;
+  margin: 4px 4px 4px 0px;
+  background: #eee;
+  border: 1px solid #eee;
+  text-decoration: none;
+  font: 12px "Lucida Grande", Helvetica, Arial, sans-serif;
+  line-height: 16px;
+  vertical-align: middle;
+  text-indent: -100em;
+  color: #666;
+  outline: none;
+  -webkit-border-radius: 2px;
+  -moz-border-radius: 2px;
+}
+
+.markus-toolbar li a span {
+  display: block;
+  margin: 3px;
+  padding: 0px;
+  line-height: 16px;
+  vertical-align: middle;
+  width: 16px;
+}
+
+.markus-toolbar li a.with-title span {
+  width: auto;
+  overflow: visible;
+  text-indent: 0px;
+  padding-left: 22px;
+}
+
+.markus-toolbar li a:hover {
+  border-color: #999;
+  text-shadow: white 0px 1px 1px;
+  -webkit-box-shadow: inset white 0px 1px 4px, inset rgba(0, 0, 0, 0.25) 0px -1px 4px;
+  -moz-box-shadow: inset white 0px 1px 4px, inset rgba(0, 0, 0, 0.25) 0px -1px 4px;
+}
+
+.markus-toolbar li a:active,
+.markus-toolbar li a.active {
+  -webkit-box-shadow: inset white 0px -1px 4px, inset rgba(0, 0, 0, 0.25) 0px 1px 4px;
+  -moz-box-shadow: inset white 0px -1px 4px, inset rgba(0, 0, 0, 0.25) 0px 1px 4px;
+}
+
+.markus-toolbar li a.active {
+  border-color: #999;
+}
+
+.markus-toolbar li a:active span {
+  margin: 4px 3px 2px;
+}
