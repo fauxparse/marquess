@@ -22,12 +22,13 @@
       
       this.buildUI();
       this.converter = new Showdown.converter();
-      this.autoUpdate(this.autoUpdate());
+      this.autoUpdate(this.options.autoUpdate);
+      this.updatePreview();
       this.toolbar.sortable();
     },
 
     buildUI: function() {
-      this.container = $('<div class="markus-container"><div class="markus-editor-pane"></div><div class="markus-preview-pane">(Preview)</div></div>');
+      this.container = $('<div class="markus-container"><div class="markus-editor-pane"></div><div class="markus-preview-pane"></div></div>');
       this.container.prepend(this.buildToolbar());
       $(this.element).addClass("markus-editor").after(this.container).appendTo(this.container.find('.markus-editor-pane'));
       this.preview_pane = this.container.find('.markus-preview-pane')
@@ -84,13 +85,17 @@
     },
     
     preview: function(value) {
-      if (typeof(value) != 'undefined') {
-        if (value != this.options.preview) {
-          this.options.preview = value;
-          this.preview_pane.slideToggle(this.options.preview);
+      if (value == 'update') {
+        this.updatePreview();
+      } else {
+        if (typeof(value) != 'undefined') {
+          if (value != this.options.preview) {
+            this.options.preview = value;
+            this.preview_pane.slideToggle('fast');
+          }
         }
+        return this.options.preview;
       }
-      return this.options.preview
     },
     
     updatePreview: function(autoShow) {
@@ -146,12 +151,18 @@
     strategies: {
       common: {
         wrapOrInsert: function(textarea, before, after, defaultText) {
-          // TODO: support "unbold"?
           var start = textarea.selectionStart, end = textarea.selectionEnd;
           var str = $(textarea).val();
-          var toInsert = (start == end ? defaultText : before + str.substring(start, end) + after);
-          $(textarea).val(str.substring(0, start) + toInsert + str.substring(end));
-          textarea.setSelectionRange(start + before.length, start + toInsert.length - after.length);
+          
+          if (start == end && str.substring(end, end + after.length) == after) {
+            bs = str.substring(0, start).replace(/([ \t]*)$/, after + '$1');
+            $(textarea).val(bs + str.substring(end + after.length));
+            textarea.setSelectionRange(bs.length, bs.length);
+          } else {
+            var toInsert = (start == end ? defaultText : before + str.substring(start, end) + after);
+            $(textarea).val(str.substring(0, start) + toInsert + str.substring(end));
+            textarea.setSelectionRange(start + before.length, start + toInsert.length - after.length);
+          }
           textarea.focus();
         }
       }
