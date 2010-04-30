@@ -23,7 +23,7 @@
   width: 100%;
   padding: 4px;
   background: white;
-  font-family: Monaco, Courier, monospace;
+  font: 13px Monaco, Courier, monospace;
 }
 
 .markus-preview-pane {
