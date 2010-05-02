@@ -2,11 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>Markus</title>
+  <title>Marquess</title>
   <script type="text/javascript" charset="utf-8" src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
   <script type="text/javascript" charset="utf-8" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.1/jquery-ui.min.js"></script>
-  <script type="text/javascript" charset="utf-8" src="markus.js"></script>
-  <link rel="stylesheet" href="markus.css" type="text/css" media="screen" charset="utf-8" />
+  <script type="text/javascript" charset="utf-8" src="marquess.js"></script>
+  <link rel="stylesheet" href="marquess.css" type="text/css" media="screen" charset="utf-8" />
 </head>
 
 <body>
@@ -16,10 +16,10 @@
     $(function() {
       if (/chrome/.test(navigator.userAgent.toLowerCase())) {
         // Chrome won't let us load local files
-        $('textarea.html').markus({ log: true });
+        $('textarea.html').marquess({ log: true });
       } else {
         $.get('README.md', function(data) {
-          $('textarea.html').val(data).markus({ log: true });
+          $('textarea.html').val(data).marquess({ log: true });
         });
       }
     });

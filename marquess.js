@@ -1,5 +1,5 @@
 (function($) {
-  $.widget("ui.markus", {
+  $.widget("ui.marquess", {
     options: {
       log: false,
       autoUpdate: false,
@@ -11,14 +11,14 @@
     },
     
     _init: function() {
-      if ($(this.element).hasClass('markus')) { return this; }
+      if ($(this.element).hasClass('marquess')) { return this; }
 
       this.editor = this.element[0];
-      this.strategy = $.browser.webkit  ? $.ui.markus.strategies.webkit  :
-                      $.browser.opera   ? $.ui.markus.strategies.opera   :
-                      $.browser.msie    ? $.ui.markus.strategies.msie    :
-                      $.browser.mozilla ? $.ui.markus.strategies.mozilla :
-                      $.ui.markus.strategies.common;
+      this.strategy = $.browser.webkit  ? $.ui.marquess.strategies.webkit  :
+                      $.browser.opera   ? $.ui.marquess.strategies.opera   :
+                      $.browser.msie    ? $.ui.marquess.strategies.msie    :
+                      $.browser.mozilla ? $.ui.marquess.strategies.mozilla :
+                      $.ui.marquess.strategies.common;
       
       this.buildUI();
       this.converter = new Showdown.converter();
@@ -28,35 +28,39 @@
     },
 
     buildUI: function() {
-      this.container = $('<div class="markus-container"><div class="markus-editor-pane"></div><div class="markus-preview-pane"></div></div>');
+      this.container = $('<div class="marquess-container"><div class="marquess-editor-pane"></div><div class="marquess-preview-pane"></div></div>');
       this.container.prepend(this.buildToolbar());
-      $(this.element).addClass("markus-editor").after(this.container).appendTo(this.container.find('.markus-editor-pane'));
-      this.preview_pane = this.container.find('.markus-preview-pane')
-                          .css({ height:this.container.find('.markus-editor-pane').height() + 'px', overflow:'auto' })
+      $(this.element).addClass("marquess-editor").after(this.container).appendTo(this.container.find('.marquess-editor-pane'));
+      this.preview_pane = this.container.find('.marquess-preview-pane')
+                          .css({ height:this.container.find('.marquess-editor-pane').height() + 'px', overflow:'auto' })
                           .toggle(this.options.preview);
     },
     
     buildToolbar: function() {
       var self = this;
-      var toolbar = this.toolbar = $('<div class="markus-toolbar"></div>');
+      var toolbar = this.toolbar = $('<div class="marquess-toolbar"></div>');
       this.buttons = {};
       $.map(this.options.toolbar, function(row, j) {
-        var r = $('<ul class="markus-toolbar-row"></ul>')
+        var r = $('<ul class="marquess-toolbar-row"></ul>')
         $.map(row, function(button_name, i) {
           var opts = { title:false };
           if (typeof(button_name) == 'object') {
             $.extend(opts, button_name[1]);
             button_name = button_name[0];
           }
-          var command = $.ui.markus.commands[button_name];
+          var command = $.ui.marquess.commands[button_name];
           if (command) {
-            var button = $('<li><a href="#" class="markus-toolbar"><span>' + command.name + '</span></a></li>').appendTo(r).find('a');
+            title = command.name;
+            if (command.shortcut) {
+              title += ' (' + command.shortcut + ')';
+            }
+            var button = $('<li><a href="#" class="marquess-toolbar-button ' + button_name + '" title="' + title + '"><span>' + command.name + '</span></a></li>').appendTo(r).find('a');
             if (opts.title) { button.addClass('with-title'); }
             if (command.toggle) {
               button.toggleClass('active', self.options[command.toggle]);
               button.click(function() {
-                //$(self.element).markus(command.toggle, !self.options[command.toggle]);
-                $(self.element).markus('preview', !self.options[command.toggle]);
+                //$(self.element).marquess(command.toggle, !self.options[command.toggle]);
+                $(self.element).marquess('preview', !self.options[command.toggle]);
                 button.toggleClass('active', self.options[command.toggle]);
                 return false;
               });
@@ -73,7 +77,7 @@
     },
     
     executeCommand: function(command) {
-      command = $.ui.markus.commands[command];
+      command = $.ui.marquess.commands[command];
       if (command && command.fn) {
         command.fn(this);
       }
@@ -125,18 +129,18 @@
     }
   });
 
-  $.extend($.ui.markus, {
+  $.extend($.ui.marquess, {
     version: "0.1",
     getter: "html",
     commands: {
       bold: {
         name:'Bold',
-        shortcut:'meta+b',
+        shortcut:'Meta+B',
         fn: function(editor) { editor.wrapOrInsert('**', '**', '**Bold text**'); }
       },
       italic: {
         name:'Italic',
-        shortcut:'meta+i',
+        shortcut:'Meta+I',
         fn: function(editor) { editor.wrapOrInsert('*', '*', '*Italic text*'); }
       },
       preview: {
@@ -169,17 +173,17 @@
     }
   });
   
-  $.extend($.ui.markus.strategies, {
-    webkit:  $.extend({}, $.ui.markus.strategies.common, {
+  $.extend($.ui.marquess.strategies, {
+    webkit:  $.extend({}, $.ui.marquess.strategies.common, {
       
     }),
-    opera:   $.extend({}, $.ui.markus.strategies.common, {
+    opera:   $.extend({}, $.ui.marquess.strategies.common, {
       
     }),
-    msie:    $.extend({}, $.ui.markus.strategies.common, {
+    msie:    $.extend({}, $.ui.marquess.strategies.common, {
       
     }),
-    mozilla: $.extend({}, $.ui.markus.strategies.common, {
+    mozilla: $.extend({}, $.ui.marquess.strategies.common, {
       
     })
   });

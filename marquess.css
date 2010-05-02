@@ -1,4 +1,4 @@
-.markus-container {
+.marquess-container {
   background: #f2f2f2;
   border: 8px solid #f2f2f2;
   -webkit-border-radius: 8px;
@@ -7,17 +7,17 @@
   -moz-box-shadow: rgba(0, 0, 0, 0.25) 0px 1px 4px;
 }
 
-.markus-editor-pane,
-.markus-preview-pane {
+.marquess-editor-pane,
+.marquess-preview-pane {
   clear: left;
   background: white;
 }
 
-.markus-editor-pane {
+.marquess-editor-pane {
   padding-right: 8px;
 }
 
-.markus-editor {
+.marquess-editor {
   border: none;
   display: block;
   width: 100%;
@@ -26,11 +26,12 @@
   font: 13px Monaco, Courier, monospace;
 }
 
-.markus-preview-pane {
+.marquess-preview-pane {
   padding: 4px;
+  border-top: 4px solid #f2f2f2;
 }
 
-.markus-toolbar-row {
+.marquess-toolbar-row {
   margin: 0px 4px 4px 0px;
   padding: 0px 0px 0px 4px;
   height: 32px;
@@ -40,14 +41,14 @@
   -moz-border-radius: 4px;
 }
 
-.markus-toolbar li {
+.marquess-toolbar li {
   margin: 0px;
   padding: 0px;
   list-style: none;
   display: inline;
 }
 
-.markus-toolbar li a {
+.marquess-toolbar li a {
   float: left;
   position: relative;
   height: 22px;
@@ -66,7 +67,7 @@
   -moz-border-radius: 2px;
 }
 
-.markus-toolbar li a span {
+.marquess-toolbar li a span {
   display: block;
   margin: 3px;
   padding: 0px;
@@ -75,30 +76,30 @@
   width: 16px;
 }
 
-.markus-toolbar li a.with-title span {
+.marquess-toolbar li a.with-title span {
   width: auto;
   overflow: visible;
   text-indent: 0px;
   padding-left: 22px;
 }
 
-.markus-toolbar li a:hover {
+.marquess-toolbar li a:hover {
   border-color: #999;
   text-shadow: white 0px 1px 1px;
   -webkit-box-shadow: inset white 0px 1px 4px, inset rgba(0, 0, 0, 0.25) 0px -1px 4px;
   -moz-box-shadow: inset white 0px 1px 4px, inset rgba(0, 0, 0, 0.25) 0px -1px 4px;
 }
 
-.markus-toolbar li a:active,
-.markus-toolbar li a.active {
+.marquess-toolbar li a:active,
+.marquess-toolbar li a.active {
   -webkit-box-shadow: inset white 0px -1px 4px, inset rgba(0, 0, 0, 0.25) 0px 1px 4px;
   -moz-box-shadow: inset white 0px -1px 4px, inset rgba(0, 0, 0, 0.25) 0px 1px 4px;
 }
 
-.markus-toolbar li a.active {
+.marquess-toolbar li a.active {
   border-color: #999;
 }
 
-.markus-toolbar li a:active span {
+.marquess-toolbar li a:active span {
   margin: 4px 3px 2px;
 }

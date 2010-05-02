@@ -1,7 +1,7 @@
-Markus
-======
+Marquess
+========
 
-Markus is a Markdown editor widget for jQuery and jQuery-UI.
+Marquess is a Markdown editor widget for jQuery and jQuery-UI.
 
 It uses the [Showdown][1] library to provide live previews, and
 [FamFamFam's excellent Silk icon set][2] for button images,
