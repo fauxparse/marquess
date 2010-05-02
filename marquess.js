@@ -13,6 +13,13 @@
     _init: function() {
       if ($(this.element).hasClass('marquess')) { return this; }
 
+      if (!$.os) {
+        $.os = {
+          name: (/(win|mac|linux|sunos|solaris|iphone)/.exec(navigator.platform.toLowerCase()) || ['unknown'])[0].replace('sunos', 'solaris')
+        };
+        $.os[$.os.name] = true;
+      }
+
       this.editor = this.element[0];
       this.strategy = $.browser.webkit  ? $.ui.marquess.strategies.webkit  :
                       $.browser.opera   ? $.ui.marquess.strategies.opera   :
@@ -52,15 +59,14 @@
           if (command) {
             title = command.name;
             if (command.shortcut) {
-              title += ' (' + command.shortcut + ')';
+              title += ' (' + command.shortcut.replace('Meta+', $.os.mac ? '&#x2318;' : 'Ctrl+') + ')';
             }
             var button = $('<li><a href="#" class="marquess-toolbar-button ' + button_name + '" title="' + title + '"><span>' + command.name + '</span></a></li>').appendTo(r).find('a');
             if (opts.title) { button.addClass('with-title'); }
             if (command.toggle) {
               button.toggleClass('active', self.options[command.toggle]);
               button.click(function() {
-                //$(self.element).marquess(command.toggle, !self.options[command.toggle]);
-                $(self.element).marquess('preview', !self.options[command.toggle]);
+                $(self.element).marquess(command.toggle, !self.options[command.toggle]);
                 button.toggleClass('active', self.options[command.toggle]);
                 return false;
               });
