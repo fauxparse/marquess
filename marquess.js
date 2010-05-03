@@ -6,11 +6,14 @@
       preview: true,
       toolbar: [
         [ 'bold', 'italic' ],
+        [ 'undo', 'redo' ],
         [ 'preview', [ 'update', { title:true } ] ]
       ]
     },
     
     _init: function() {
+      var self = this;
+      
       if ($(this.element).hasClass('marquess')) { return this; }
 
       if (!$.os) {
@@ -32,6 +35,15 @@
       this.autoUpdate(this.options.autoUpdate);
       this.updatePreview();
       this.toolbar.sortable();
+      this.undoStack = [];
+      this.undoStack.pointer = -1;
+      this.saveUndoState();
+      $(this.editor).keypress(function(e) {
+        if (!self.startedTyping) {
+          self.saveUndoState();
+          self.startedTyping = true;
+        }
+      });
     },
 
     buildUI: function() {
@@ -71,7 +83,12 @@
                 return false;
               });
             } else {
-              button.click(function() { self.executeCommand(button_name); return false; });
+              button.click(function() {
+                if (!$(this).hasClass('disabled')) {
+                  self.executeCommand(button_name);
+                }
+                return false;
+              });
             }
             if (command.shortcut) $(self.editor).bind('keydown', command.shortcut, function() { button.click(); return false; });
             self.buttons[button_name] = button;
@@ -82,6 +99,10 @@
       return this.toolbar;
     },
     
+    enableButton: function(button, toggle) {
+      this.buttons[button].toggleClass('disabled', !toggle);
+    },
+    
     executeCommand: function(command) {
       command = $.ui.marquess.commands[command];
       if (command && command.fn) {
@@ -90,8 +111,11 @@
     },
     
     wrapOrInsert: function(before, after, defaultText) {
+      if (this.startedTyping) { this.saveUndoState(); }
+      this.undoStack[this.undoStack.pointer].bounds = this.strategy.selectionBounds(this.editor);
       this.strategy.wrapOrInsert(this.editor, before, after, defaultText);
-      if (!this.options.autoUpdate) { this.updatePreview(false); }
+      this.updatePreview(false);
+      this.saveUndoState();
     },
     
     preview: function(value) {
@@ -123,6 +147,43 @@
       return this.options.autoUpdate;
     },
     
+    saveUndoState:function() {
+      this.undoStack = this.undoStack.slice(0, this.undoStack.pointer + 1);
+      this.undoStack.push(this.strategy.state(this.editor));
+      this.undoStack.pointer = this.undoStack.length - 1;
+      this.startedTyping = false;
+      this.enableButton('undo', this.undoStack.pointer > 0);
+      this.enableButton('redo', false);
+    },
+    
+    undo:function() {
+      if (this.undoStack.pointer > 0) {
+        if (this.startedTyping && this.undoStack.pointer == this.undoStack.length - 1) {
+          this.undoStack.push(this.strategy.state(this.editor));
+        } else {
+          this.undoStack.pointer -= 1;
+        }
+        var state = this.undoStack[this.undoStack.pointer];
+        this.strategy.restore(this.editor, state);
+        this.updatePreview(false);
+        this.startedTyping = false;
+        this.enableButton('undo', this.undoStack.pointer > 0);
+        this.enableButton('redo', this.undoStack.pointer < this.undoStack.length - 1);
+      }
+    },
+    
+    redo: function() {
+      if (this.undoStack.pointer < this.undoStack.length - 1) {
+        this.undoStack.pointer += 1;
+        var state = this.undoStack[this.undoStack.pointer];
+        this.strategy.restore(this.editor, state);
+        this.updatePreview(false);
+        this.startedTyping = false;
+        this.enableButton('undo', this.undoStack.pointer > 0);
+        this.enableButton('redo', this.undoStack.pointer < this.undoStack.length - 1);
+      }
+    },
+    
     log: function(msg) {
       if(!this.options.log) return;
       if(window.console && console.log) {
@@ -149,6 +210,16 @@
         shortcut:'Meta+I',
         fn: function(editor) { editor.wrapOrInsert('*', '*', '*Italic text*'); }
       },
+      undo: {
+        name: 'Undo',
+        shortcut:'Meta+Z',
+        fn: function(editor) { editor.undo(); }
+      },
+      redo: {
+        name: 'Redo',
+        shortcut:'Meta+Shift+Z',
+        fn: function(editor) { editor.redo(); }
+      },
       preview: {
         name: 'Preview',
         toggle: 'preview',
@@ -160,18 +231,37 @@
     },
     strategies: {
       common: {
+        state: function(textarea) {
+          return { text:$(textarea).val(), bounds:this.selectionBounds(textarea) };
+        },
+        
+        restore: function(textarea, state) {
+          $(textarea).val(state.text);
+          this.setSelectionBounds(textarea, state.bounds.start, state.bounds.end);
+          textarea.focus();
+        },
+        
+        selectionBounds: function(textarea) {
+          return { start:textarea.selectionStart, end:textarea.selectionEnd };
+        },
+        
+        setSelectionBounds: function(textarea, start, end) {
+          textarea.setSelectionRange(start, end);
+        },
+        
         wrapOrInsert: function(textarea, before, after, defaultText) {
-          var start = textarea.selectionStart, end = textarea.selectionEnd;
+          var bounds = this.selectionBounds(textarea);
+          var start = bounds.start, end = bounds.end;
           var str = $(textarea).val();
           
           if (start == end && str.substring(end, end + after.length) == after) {
             bs = str.substring(0, start).replace(/([ \t]*)$/, after + '$1');
             $(textarea).val(bs + str.substring(end + after.length));
-            textarea.setSelectionRange(bs.length, bs.length);
+            this.setSelectionBounds(textarea, bs.length, bs.length);
           } else {
             var toInsert = (start == end ? defaultText : before + str.substring(start, end) + after);
             $(textarea).val(str.substring(0, start) + toInsert + str.substring(end));
-            textarea.setSelectionRange(start + before.length, start + toInsert.length - after.length);
+            this.setSelectionBounds(textarea, start + before.length, start + toInsert.length - after.length);
           }
           textarea.focus();
         }
