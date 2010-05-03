@@ -6,7 +6,7 @@
       preview: true,
       toolbar: [
         [ 'bold', 'italic' ],
-        [ 'undo', 'redo' ],
+        [ 'undo', 'redo', '|', 'cut', 'copy', 'paste' ],
         [ 'preview', [ 'update', { title:true } ] ]
       ]
     },
@@ -63,37 +63,41 @@
         var r = $('<ul class="marquess-toolbar-row"></ul>')
         $.map(row, function(button_name, i) {
           var opts = { title:false };
-          if (typeof(button_name) == 'object') {
-            $.extend(opts, button_name[1]);
-            button_name = button_name[0];
-          }
-          var command = $.ui.marquess.commands[button_name];
-          if (command) {
-            title = command.name;
-            if (command.shortcut) {
-              title += ' (' + command.shortcut.replace('Meta+', $.os.mac ? '&#x2318;' : 'Ctrl+') + ')';
+          if (button_name == '|') {
+            $('<li class="separator"></li>').appendTo(r);
+          } else {
+            if (typeof(button_name) == 'object') {
+              $.extend(opts, button_name[1]);
+              button_name = button_name[0];
             }
-            var button = $('<li><a href="#" class="marquess-toolbar-button ' + button_name + '" title="' + title + '"><span>' + command.name + '</span></a></li>').appendTo(r).find('a');
-            if (opts.title) { button.addClass('with-title'); }
-            if (command.toggle) {
-              button.toggleClass('active', self.options[command.toggle]);
-              button.click(function() {
-                $(self.element).marquess(command.toggle, !self.options[command.toggle]);
+            var command = $.ui.marquess.commands[button_name];
+            if (command) {
+              title = command.name;
+              if (command.shortcut) {
+                title += ' (' + command.shortcut.replace('Meta+', $.os.mac ? '&#x2318;' : 'Ctrl+') + ')';
+              }
+              var button = $('<li><a href="#" class="marquess-toolbar-button ' + button_name + '" title="' + title + '"><span>' + command.name + '</span></a></li>').appendTo(r).find('a');
+              if (opts.title) { button.addClass('with-title'); }
+              if (command.toggle) {
                 button.toggleClass('active', self.options[command.toggle]);
-                return false;
-              });
-            } else {
-              button.click(function() {
-                if (!$(this).hasClass('disabled')) {
-                  self.executeCommand(button_name);
-                }
-                return false;
-              });
+                button.click(function() {
+                  $(self.element).marquess(command.toggle, !self.options[command.toggle]);
+                  button.toggleClass('active', self.options[command.toggle]);
+                  return false;
+                });
+              } else {
+                button.click(function() {
+                  if (!$(this).hasClass('disabled')) {
+                    self.executeCommand(button_name);
+                  }
+                  return false;
+                });
+              }
+              if (command.shortcut) {
+                $(self.editor).bind('keydown', command.shortcut, function() { button.click(); return false; });
+              }
+              self.buttons[button_name] = button;
             }
-            if (command.shortcut) {
-              $(self.editor).bind('keydown', command.shortcut, function() { button.click(); return false; });
-            }
-            self.buttons[button_name] = button;
           }
         });
         toolbar.append(r);
@@ -127,6 +131,7 @@
         if (typeof(value) != 'undefined') {
           if (value != this.options.preview) {
             this.options.preview = value;
+            this.buttons['preview'].toggleClass('active', value)
             this.preview_pane.slideToggle('fast');
           }
         }
@@ -221,6 +226,21 @@
         name: 'Redo',
         shortcut:'Meta+Shift+Z',
         fn: function(editor) { editor.redo(); }
+      },
+      cut: {
+        name: 'Cut',
+        shortcut:'Meta+X',
+        fn: function(editor) { editor.cut(); }
+      },
+      copy: {
+        name: 'Copy',
+        shortcut:'Meta+C',
+        fn: function(editor) { editor.copy(); }
+      },
+      paste: {
+        name: 'Paste',
+        shortcut:'Meta+V',
+        fn: function(editor) { editor.paste(); }
       },
       preview: {
         name: 'Preview',

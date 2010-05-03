@@ -48,6 +48,13 @@
   display: inline;
 }
 
+.marquess-toolbar li.separator {
+  display: block;
+  float: left;
+  width: 8px;
+  height: 24px;
+}
+
 .marquess-toolbar li a {
   float: left;
   position: relative;
@@ -74,6 +81,7 @@
   line-height: 16px;
   vertical-align: middle;
   width: 16px;
+  background: transparent url(marquess-toolbar.png) no-repeat 0px 0px;
 }
 
 .marquess-toolbar li a.with-title span {
@@ -104,8 +112,24 @@
   margin: 4px 3px 2px;
 }
 
+.marquess-toolbar li a.bold          span { background-position: 0px    0px; }
+.marquess-toolbar li a.italic        span { background-position: 0px  -16px; }
+.marquess-toolbar li a.heading       span { background-position: 0px  -32px; }
+.marquess-toolbar li a.bulleted_list span { background-position: 0px  -48px; }
+.marquess-toolbar li a.numbered_list span { background-position: 0px  -64px; }
+.marquess-toolbar li a.blockquote    span { background-position: 0px  -80px; }
+.marquess-toolbar li a.link          span { background-position: 0px  -96px; }
+.marquess-toolbar li a.picture       span { background-position: 0px -112px; }
+.marquess-toolbar li a.cut           span { background-position: 0px -128px; }
+.marquess-toolbar li a.copy          span { background-position: 0px -144px; }
+.marquess-toolbar li a.paste         span { background-position: 0px -160px; }
+.marquess-toolbar li a.undo          span { background-position: 0px -176px; }
+.marquess-toolbar li a.redo          span { background-position: 0px -192px; }
+.marquess-toolbar li a.preview       span { background-position: 0px -208px; }
+.marquess-toolbar li a.update        span { background-position: 0px -224px; }
+
 .marquess-toolbar li a.disabled {
-  opacity: 0.5;
+  opacity: 0.25;
   border-color: #eee;
   -webkit-box-shadow: none;
   -moz-box-shadow: none;
