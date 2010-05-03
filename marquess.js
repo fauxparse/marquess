@@ -5,8 +5,8 @@
       autoUpdate: false,
       preview: true,
       toolbar: [
-        [ 'bold', 'italic' ],
-        [ 'undo', 'redo', '|', 'cut', 'copy', 'paste' ],
+        [ 'bold', 'italic', '|', 'heading', 'bulleted_list', 'numbered_list', 'blockquote', '|', 'link', 'picture' ],
+        [ 'undo', 'redo' ],
         [ 'preview', [ 'update', { title:true } ] ]
       ]
     },
@@ -43,6 +43,9 @@
           self.saveUndoState();
           self.startedTyping = true;
         }
+      });
+      $(this.editor).bind('paste', function(e) {
+        self.log(e);
       });
     },
 
@@ -120,6 +123,14 @@
       if (this.startedTyping) { this.saveUndoState(); }
       this.undoStack[this.undoStack.pointer].bounds = this.strategy.selectionBounds(this.editor);
       this.strategy.wrapOrInsert(this.editor, before, after, defaultText);
+      this.updatePreview(false);
+      this.saveUndoState();
+    },
+    
+    cycleHeading:function() {
+      if (this.startedTyping) { this.saveUndoState(); }
+      this.undoStack[this.undoStack.pointer].bounds = this.strategy.selectionBounds(this.editor);
+      this.strategy.cycleHeading(this.editor);
       this.updatePreview(false);
       this.saveUndoState();
     },
@@ -234,6 +245,11 @@
         shortcut:'Meta+I',
         fn: function(editor) { editor.wrapOrInsert('*', '*', '*Italic text*'); }
       },
+      heading: {
+        name:'Cycle heading',
+        shortcut:'Meta+H',
+        fn: function(editor) { editor.cycleHeading(); }
+      },
       undo: {
         name: 'Undo',
         shortcut:'Meta+Z',
@@ -246,17 +262,17 @@
       },
       cut: {
         name: 'Cut',
-        shortcut:'Meta+X',
+        // shortcut:'Meta+X',
         fn: function(editor) { editor.cut(); }
       },
       copy: {
         name: 'Copy',
-        shortcut:'Meta+C',
+        // shortcut:'Meta+C',
         fn: function(editor) { editor.copy(); }
       },
       paste: {
         name: 'Paste',
-        shortcut:'Meta+V',
+        // shortcut:'Meta+V',
         fn: function(editor) { editor.paste(); }
       },
       preview: {
@@ -302,6 +318,33 @@
             $(textarea).val(str.substring(0, start) + toInsert + str.substring(end));
             this.setSelectionBounds(textarea, start + before.length, start + toInsert.length - after.length);
           }
+          textarea.focus();
+        },
+        
+        cycleHeading: function(textarea) {
+          var str = $(textarea).val(), bounds = this.selectionBounds(textarea);
+          var before = str.substring(0, bounds.start), after = str.substring(bounds.end);
+          var heading = (bounds.start == bounds.end) ? "Heading text" : str.substring(bounds.start, bounds.end);
+          if (bounds.start > 0 && !(/\n$/.test(before))) { before += '\n'; bounds.start += 1; }
+          if (!/^\r?\n/.test(after)) { after = '\n' + after; }
+          if (match = /(\r?\n)$/.exec(heading)) {
+            after = match[1] + after;
+            heading = heading.substring(0, heading.length - match[1].length);
+          }
+          heading = heading.replace(/\n/g, ' ');
+          var underline = '\n';
+          if (match = /^(\r?\n)(\=+|\-+)(\r?\n)*/.exec(after)) {
+            after = after.substring(match[0].length);
+            if (match[2][0] == '-') {
+              for (i = 0; i < heading.length; i++) { underline += '='; }
+              underline += '\n';
+            }
+            underline += '\n';
+          } else {
+            for (i = 0; i < heading.length; i++) { underline += '-'; }
+          }
+          $(textarea).val(before + heading + underline + after);
+          this.setSelectionBounds(textarea, bounds.start, bounds.start + heading.length);
           textarea.focus();
         },
         
