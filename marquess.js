@@ -39,7 +39,7 @@
       this.undoStack.pointer = -1;
       this.saveUndoState();
       $(this.editor).keypress(function(e) {
-        if (!self.startedTyping) {
+        if (!self.startedTyping && !e.metaKey) {
           self.saveUndoState();
           self.startedTyping = true;
         }
@@ -90,7 +90,9 @@
                 return false;
               });
             }
-            if (command.shortcut) $(self.editor).bind('keydown', command.shortcut, function() { button.click(); return false; });
+            if (command.shortcut) {
+              $(self.editor).bind('keydown', command.shortcut, function() { button.click(); return false; });
+            }
             self.buttons[button_name] = button;
           }
         });
@@ -296,7 +298,6 @@
  * Original idea by:
  * Binny V A, http://www.openjs.com/scripts/events/keyboard_shortcuts/
 */
-
 (function(jQuery){
 
 	jQuery.hotkeys = {
