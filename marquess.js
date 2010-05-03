@@ -163,6 +163,23 @@
       this.enableButton('redo', false);
     },
     
+    cut: function() {
+      if (this.startedTyping) { this.saveUndoState(); }
+      this.undoStack[this.undoStack.pointer].bounds = this.strategy.selectionBounds(this.editor);
+      this.strategy.cutToClipboard(this.editor);
+      this.saveUndoState();
+    },
+    
+    copy: function() {
+      this.strategy.copyToClipboard(this.editor);
+    },
+    
+    paste: function() {
+      if (this.startedTyping) { this.saveUndoState(); }
+      this.strategy.pasteFromClipboard(this.editor);
+      this.saveUndoState();
+    },
+    
     undo:function() {
       if (this.undoStack.pointer > 0) {
         if (this.startedTyping && this.undoStack.pointer == this.undoStack.length - 1) {
@@ -286,6 +303,40 @@
             this.setSelectionBounds(textarea, start + before.length, start + toInsert.length - after.length);
           }
           textarea.focus();
+        },
+        
+        cutToClipboard: function(textarea) {
+          this.copyToClipboard(textarea);
+          var bounds = this.selectionBounds(textarea);
+          var start = bounds.start, end = bounds.end;
+          var str = $(textarea).val();
+          $(textarea).val(str.substring(0, start) + str.substring(end));
+          this.setSelectionBounds(textarea, start, start);
+          textarea.focus();
+        },
+        
+        copyToClipboard: function(textarea) {
+          var bounds = this.selectionBounds(textarea);
+          var start = bounds.start, end = bounds.end;
+          var str = $(textarea).val();
+          var text = str.substring(start, end);
+          this.clipboard().setText(text);
+          textarea.focus();
+        },
+        
+        pasteFromClipboard: function(textarea) {
+          var bounds = this.selectionBounds(textarea);
+          var start = bounds.start, end = bounds.end;
+          var str = $(textarea).val();
+          var text = this.clipboard().getText();
+          $(textarea).val(str.substring(0, start) + text + str.substring(end));
+          this.setSelectionBounds(textarea, start, start + text.length);
+          textarea.focus();
+        },
+        
+        clipboard: function() {
+          if (!this._clipboard) { this._clipboard = new ZeroClipboard.Client(); }
+          return this._clipboard;
         }
       }
     }
