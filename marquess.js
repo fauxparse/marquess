@@ -43,7 +43,6 @@
           self.saveUndoState();
           self.startedTyping = true;
         }
-        
         if (self.options.autoUpdate && !self.updater) {
           self.updater = window.setTimeout(function() { self.updatePreview() }, self.options.autoUpdate);
         }
