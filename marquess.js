@@ -38,14 +38,11 @@
       this.undoStack = [];
       this.undoStack.pointer = -1;
       this.saveUndoState();
-      $(this.editor).keypress(function(e) {
-        if (!self.startedTyping && !e.metaKey) {
+      $(this.editor).bind('input', function(e) {
+        if (!self.startedTyping) {
           self.saveUndoState();
           self.startedTyping = true;
         }
-      });
-      $(this.editor).bind('paste', function(e) {
-        self.log(e);
       });
     },
 
@@ -174,23 +171,6 @@
       this.enableButton('redo', false);
     },
     
-    cut: function() {
-      if (this.startedTyping) { this.saveUndoState(); }
-      this.undoStack[this.undoStack.pointer].bounds = this.strategy.selectionBounds(this.editor);
-      this.strategy.cutToClipboard(this.editor);
-      this.saveUndoState();
-    },
-    
-    copy: function() {
-      this.strategy.copyToClipboard(this.editor);
-    },
-    
-    paste: function() {
-      if (this.startedTyping) { this.saveUndoState(); }
-      this.strategy.pasteFromClipboard(this.editor);
-      this.saveUndoState();
-    },
-    
     undo:function() {
       if (this.undoStack.pointer > 0) {
         if (this.startedTyping && this.undoStack.pointer == this.undoStack.length - 1) {
@@ -259,21 +239,6 @@
         name: 'Redo',
         shortcut:'Meta+Shift+Z',
         fn: function(editor) { editor.redo(); }
-      },
-      cut: {
-        name: 'Cut',
-        // shortcut:'Meta+X',
-        fn: function(editor) { editor.cut(); }
-      },
-      copy: {
-        name: 'Copy',
-        // shortcut:'Meta+C',
-        fn: function(editor) { editor.copy(); }
-      },
-      paste: {
-        name: 'Paste',
-        // shortcut:'Meta+V',
-        fn: function(editor) { editor.paste(); }
       },
       preview: {
         name: 'Preview',
@@ -345,35 +310,6 @@
           }
           $(textarea).val(before + heading + underline + after);
           this.setSelectionBounds(textarea, bounds.start, bounds.start + heading.length);
-          textarea.focus();
-        },
-        
-        cutToClipboard: function(textarea) {
-          this.copyToClipboard(textarea);
-          var bounds = this.selectionBounds(textarea);
-          var start = bounds.start, end = bounds.end;
-          var str = $(textarea).val();
-          $(textarea).val(str.substring(0, start) + str.substring(end));
-          this.setSelectionBounds(textarea, start, start);
-          textarea.focus();
-        },
-        
-        copyToClipboard: function(textarea) {
-          var bounds = this.selectionBounds(textarea);
-          var start = bounds.start, end = bounds.end;
-          var str = $(textarea).val();
-          var text = str.substring(start, end);
-          this.clipboard().setText(text);
-          textarea.focus();
-        },
-        
-        pasteFromClipboard: function(textarea) {
-          var bounds = this.selectionBounds(textarea);
-          var start = bounds.start, end = bounds.end;
-          var str = $(textarea).val();
-          var text = this.clipboard().getText();
-          $(textarea).val(str.substring(0, start) + text + str.substring(end));
-          this.setSelectionBounds(textarea, start, start + text.length);
           textarea.focus();
         },
         
