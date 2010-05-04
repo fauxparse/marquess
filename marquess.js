@@ -24,11 +24,13 @@
       }
 
       this.editor = this.element[0];
-      this.strategy = $.browser.webkit  ? $.ui.marquess.strategies.webkit  :
-                      $.browser.opera   ? $.ui.marquess.strategies.opera   :
-                      $.browser.msie    ? $.ui.marquess.strategies.msie    :
-                      $.browser.mozilla ? $.ui.marquess.strategies.mozilla :
-                      $.ui.marquess.strategies.common;
+      $.extend(this.editor, 
+        $.browser.webkit  ? $.ui.marquess.strategies.webkit  :
+        $.browser.opera   ? $.ui.marquess.strategies.opera   :
+        $.browser.msie    ? $.ui.marquess.strategies.msie    :
+        $.browser.mozilla ? $.ui.marquess.strategies.mozilla :
+        $.ui.marquess.strategies.common
+      );
       
       this.buildUI();
       this.converter = new Showdown.converter();
@@ -121,24 +123,24 @@
     
     wrapOrInsert: function(before, after, defaultText) {
       if (this.startedTyping) { this.saveUndoState(); }
-      this.undoStack[this.undoStack.pointer].bounds = this.strategy.selectionBounds(this.editor);
-      this.strategy.wrapOrInsert(this.editor, before, after, defaultText);
+      this.undoStack[this.undoStack.pointer].bounds = this.editor.selectionBounds();
+      this.editor.wrapOrInsert(before, after, defaultText);
       this.updatePreview(false);
       this.saveUndoState();
     },
     
     prefixLines: function(prefix, defaultText) {
       if (this.startedTyping) { this.saveUndoState(); }
-      this.undoStack[this.undoStack.pointer].bounds = this.strategy.selectionBounds(this.editor);
-      this.strategy.prefixLines(this.editor, prefix, defaultText);
+      this.undoStack[this.undoStack.pointer].bounds = this.editor.selectionBounds();
+      this.editor.prefixLines(prefix, defaultText);
       this.updatePreview(false);
       this.saveUndoState();
     },
     
     cycleHeading:function() {
       if (this.startedTyping) { this.saveUndoState(); }
-      this.undoStack[this.undoStack.pointer].bounds = this.strategy.selectionBounds(this.editor);
-      this.strategy.cycleHeading(this.editor);
+      this.undoStack[this.undoStack.pointer].bounds = this.editor.selectionBounds();
+      this.editor.cycleHeading();
       this.updatePreview(false);
       this.saveUndoState();
     },
@@ -179,7 +181,7 @@
     
     saveUndoState:function() {
       this.undoStack = this.undoStack.slice(0, this.undoStack.pointer + 1);
-      this.undoStack.push(this.strategy.state(this.editor));
+      this.undoStack.push(this.editor.state());
       this.undoStack.pointer = this.undoStack.length - 1;
       this.startedTyping = false;
       this.enableButton('undo', this.undoStack.pointer > 0);
@@ -189,12 +191,12 @@
     undo:function() {
       if (this.undoStack.pointer > 0) {
         if (this.startedTyping && this.undoStack.pointer == this.undoStack.length - 1) {
-          this.undoStack.push(this.strategy.state(this.editor));
+          this.undoStack.push(this.editor.state());
         } else {
           this.undoStack.pointer -= 1;
         }
         var state = this.undoStack[this.undoStack.pointer];
-        this.strategy.restore(this.editor, state);
+        this.editor.restore(state);
         this.updatePreview(false);
         this.startedTyping = false;
         this.enableButton('undo', this.undoStack.pointer > 0);
@@ -206,7 +208,7 @@
       if (this.undoStack.pointer < this.undoStack.length - 1) {
         this.undoStack.pointer += 1;
         var state = this.undoStack[this.undoStack.pointer];
-        this.strategy.restore(this.editor, state);
+        this.editor.restore(state);
         this.updatePreview(false);
         this.startedTyping = false;
         this.enableButton('undo', this.undoStack.pointer > 0);
@@ -280,45 +282,45 @@
     },
     strategies: {
       common: {
-        state: function(textarea) {
-          return { text:$(textarea).val(), bounds:this.selectionBounds(textarea) };
+        state: function() {
+          return { text:$(this).val(), bounds:this.selectionBounds() };
         },
         
-        restore: function(textarea, state) {
-          $(textarea).val(state.text);
-          this.setSelectionBounds(textarea, state.bounds.start, state.bounds.end);
-          textarea.focus();
+        restore: function(state) {
+          $(this).val(state.text);
+          this.setSelectionBounds(state.bounds.start, state.bounds.end);
+          this.focus();
         },
         
-        selectionBounds: function(textarea) {
-          return { start:textarea.selectionStart, end:textarea.selectionEnd };
+        selectionBounds: function() {
+          return { start:this.selectionStart, end:this.selectionEnd };
         },
         
-        setSelectionBounds: function(textarea, start, end) {
-          textarea.setSelectionRange(start, end);
+        setSelectionBounds: function(start, end) {
+          this.setSelectionRange(start, end);
         },
         
-        wrapOrInsert: function(textarea, before, after, defaultText) {
-          var bounds = this.selectionBounds(textarea);
+        wrapOrInsert: function(before, after, defaultText) {
+          var bounds = this.selectionBounds();
           var start = bounds.start, end = bounds.end;
-          var str = $(textarea).val();
+          var str = $(this).val();
           
           if (start == end && str.substring(end, end + after.length) == after) {
             bs = str.substring(0, start).replace(/([ \t]*)$/, after + '$1');
-            $(textarea).val(bs + str.substring(end + after.length));
-            this.setSelectionBounds(textarea, bs.length, bs.length);
+            $(this).val(bs + str.substring(end + after.length));
+            this.setSelectionBounds(bs.length, bs.length);
           } else {
             var toInsert = (start == end ? defaultText : before + str.substring(start, end) + after);
-            $(textarea).val(str.substring(0, start) + toInsert + str.substring(end));
-            this.setSelectionBounds(textarea, start + before.length, start + toInsert.length - after.length);
+            $(this).val(str.substring(0, start) + toInsert + str.substring(end));
+            this.setSelectionBounds(start + before.length, start + toInsert.length - after.length);
           }
-          textarea.focus();
+          this.focus();
         },
         
-        prefixLines: function(textarea, prefix, defaultText) {
-          var bounds = this.selectionBounds(textarea);
+        prefixLines: function(prefix, defaultText) {
+          var bounds = this.selectionBounds();
           var start = bounds.start, end = bounds.end;
-          var str = $(textarea).val();
+          var str = $(this).val();
           
           var before = str.substring(0, bounds.start).replace(/[\r\n]+$/, ''), after = str.substring(bounds.end).replace(/^[\r\n]+/, '');
           var contents = ((bounds.start == bounds.end) ? defaultText : str.substring(bounds.start, bounds.end)).replace(/\s*$/, '');
@@ -341,13 +343,13 @@
             contents = prefix + contents.split(/\r?\n/).join('\n' + prefix);
           }
           
-          $(textarea).val(before + contents + '\n' + after);
-          this.setSelectionBounds(textarea, bounds.start, bounds.start + contents.length);
-          textarea.focus();
+          $(this).val(before + contents + '\n' + after);
+          this.setSelectionBounds(bounds.start, bounds.start + contents.length);
+          this.focus();
         },
         
-        cycleHeading: function(textarea) {
-          var str = $(textarea).val(), bounds = this.selectionBounds(textarea);
+        cycleHeading: function() {
+          var str = $(this).val(), bounds = this.selectionBounds();
           var before = str.substring(0, bounds.start), after = str.substring(bounds.end);
           var heading = (bounds.start == bounds.end) ? "Heading text" : str.substring(bounds.start, bounds.end);
           if (bounds.start > 0 && !(/\n$/.test(before))) { before += '\n'; bounds.start += 1; }
@@ -368,9 +370,9 @@
           } else {
             for (i = 0; i < heading.length; i++) { underline += '-'; }
           }
-          $(textarea).val(before + heading + underline + after);
-          this.setSelectionBounds(textarea, bounds.start, bounds.start + heading.length);
-          textarea.focus();
+          $(this).val(before + heading + underline + after);
+          this.setSelectionBounds(this, bounds.start, bounds.start + heading.length);
+          this.focus();
         },
       }
     }
