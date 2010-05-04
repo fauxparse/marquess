@@ -2,7 +2,7 @@
   $.widget("ui.marquess", {
     options: {
       log: false,
-      autoUpdate: false,
+      autoUpdate: 250,
       preview: true,
       toolbar: [
         [ 'bold', 'italic', '|', 'heading', 'bulleted_list', 'numbered_list', 'blockquote', '|', 'link', 'picture' ],
@@ -42,6 +42,10 @@
         if (!self.startedTyping) {
           self.saveUndoState();
           self.startedTyping = true;
+        }
+        
+        if (self.options.autoUpdate && !self.updater) {
+          self.updater = window.setTimeout(function() { self.updatePreview() }, self.options.autoUpdate);
         }
       });
     },
@@ -148,6 +152,10 @@
     },
     
     updatePreview: function(autoShow) {
+      if (this.updater) {
+        window.clearTimeout(this.updater);
+        this.updater = null;
+      }
       if (autoShow != false && !this.options.preview) { this.preview(true); }
       this.preview_pane.html(this.converter.makeHtml($(this.element).val()));
     },
@@ -312,11 +320,6 @@
           this.setSelectionBounds(textarea, bounds.start, bounds.start + heading.length);
           textarea.focus();
         },
-        
-        clipboard: function() {
-          if (!this._clipboard) { this._clipboard = new ZeroClipboard.Client(); }
-          return this._clipboard;
-        }
       }
     }
   });
