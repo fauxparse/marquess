@@ -128,6 +128,14 @@
       this.saveUndoState();
     },
     
+    prefixLines: function(prefix, defaultText) {
+      if (this.startedTyping) { this.saveUndoState(); }
+      this.undoStack[this.undoStack.pointer].bounds = this.strategy.selectionBounds(this.editor);
+      this.strategy.prefixLines(this.editor, prefix, defaultText);
+      this.updatePreview(false);
+      this.saveUndoState();
+    },
+    
     cycleHeading:function() {
       if (this.startedTyping) { this.saveUndoState(); }
       this.undoStack[this.undoStack.pointer].bounds = this.strategy.selectionBounds(this.editor);
@@ -238,6 +246,20 @@
         shortcut:'Meta+H',
         fn: function(editor) { editor.cycleHeading(); }
       },
+      bulleted_list: {
+        name: 'Bulleted list',
+        shortcut:'Meta+U',
+        fn: function(editor) { editor.prefixLines('  - ', 'List item') }
+      },
+      numbered_list: {
+        name: 'Numbered list',
+        shortcut:'Meta+O',
+        fn: function(editor) { editor.prefixLines('  1. ', 'List item') }
+      },
+      blockquote: {
+        name: 'Blockquote',
+        fn: function(editor) { editor.prefixLines('  > ', 'Blockquote') }
+      },
       undo: {
         name: 'Undo',
         shortcut:'Meta+Z',
@@ -294,6 +316,37 @@
           textarea.focus();
         },
         
+        prefixLines: function(textarea, prefix, defaultText) {
+          var bounds = this.selectionBounds(textarea);
+          var start = bounds.start, end = bounds.end;
+          var str = $(textarea).val();
+          
+          var before = str.substring(0, bounds.start).replace(/[\r\n]+$/, ''), after = str.substring(bounds.end).replace(/^[\r\n]+/, '');
+          var contents = ((bounds.start == bounds.end) ? defaultText : str.substring(bounds.start, bounds.end)).replace(/\s*$/, '');
+          var previous_line_match = /\n([^\n]+)\s*$/.exec(before);
+          if (previous_line_match && previous_line_match[1].substring(0, prefix.length) != prefix) {
+            before += '\n';
+            bounds.start += 1;
+          }
+          if (after.substring(0, prefix.length) != prefix) {
+            after = '\n' + after;
+          }
+          
+          if (contents.substring(0, prefix.length) == prefix) {
+            var lines = contents.split(/\r?\n/), r = new RegExp('^' + prefix);
+            for (i = 0; i < lines.length; i++) {
+              lines[i] = lines[i].replace(r, '');
+            }
+            contents = lines.join('\n');
+          } else {
+            contents = prefix + contents.split(/\r?\n/).join('\n' + prefix);
+          }
+          
+          $(textarea).val(before + contents + '\n' + after);
+          this.setSelectionBounds(textarea, bounds.start, bounds.start + contents.length);
+          textarea.focus();
+        },
+        
         cycleHeading: function(textarea) {
           var str = $(textarea).val(), bounds = this.selectionBounds(textarea);
           var before = str.substring(0, bounds.start), after = str.substring(bounds.end);
@@ -306,7 +359,7 @@
           }
           heading = heading.replace(/\n/g, ' ');
           var underline = '\n';
-          if (match = /^(\r?\n)(\=+|\-+)(\r?\n)*/.exec(after)) {
+          if (match = /^(\r?\n)?z(\=+|\-+)(\r?\n)*/.exec(after)) {
             after = after.substring(match[0].length);
             if (match[2][0] == '-') {
               for (i = 0; i < heading.length; i++) { underline += '='; }
