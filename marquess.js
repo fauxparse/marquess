@@ -135,22 +135,6 @@
       this.saveUndoState();
     },
     
-    prefixLines: function(prefix, defaultText) {
-      if (this.startedTyping) { this.saveUndoState(); }
-      this.undoStack[this.undoStack.pointer].bounds = this.editor.selectionBounds();
-      this.editor.prefixLines(prefix, defaultText);
-      this.updatePreview(false);
-      this.saveUndoState();
-    },
-    
-    cycleHeading:function() {
-      if (this.startedTyping) { this.saveUndoState(); }
-      this.undoStack[this.undoStack.pointer].bounds = this.editor.selectionBounds();
-      this.editor.cycleHeading();
-      this.updatePreview(false);
-      this.saveUndoState();
-    },
-    
     preview: function(value) {
       if (value == 'update') {
         this.updatePreview();
@@ -264,7 +248,9 @@
       heading: {
         name:'Cycle heading',
         shortcut:'Meta+H',
-        fn: function(editor) { editor.cycleHeading(); }
+        transform: {
+          heading: [ '-', '=', '' ]
+        }
       },
       bulleted_list: {
         name:      'Bulleted list',
@@ -364,6 +350,25 @@
                 after = (options.after || '') + after;
               }
             }
+          } else if (options.heading) {
+            if (state.bounds.start > 0) {
+              before = before.replace(/\s*$/, '\n\n');
+            }
+            text = (empty ? (options.defaultText || 'Heading') : text).replace(/[\r\n]+$/, '');
+            after = after.replace(/^\s*/, '');
+            for (i = 0; i < options.heading.length; i++) {
+              var r = new RegExp('^((' + options.heading[i] + ')+[\\r\\n]*)');
+              if (m = r.exec(after)) {
+                i = (i + 1) % options.heading.length;
+                var h = '\n';
+                if (options.heading[i] != '') {
+                  for (j = 0; j < text.length; j++) { h += options.heading[i]; }
+                  h += '\n';
+                }
+                after = h + '\n' + after.substring(m[0].length);
+                break;
+              }
+            }
           } else {
             if (empty) { text = options.defaultText || 'Text'; }
             
@@ -376,15 +381,19 @@
                 text = $.map(linesBefore[2].split('\n'), function(text, i) {
                   return text == '' ? null : options.match ? text.replace(options.match, '') : text.substring(options.before.length);
                 }).join('\n') + '\n' + text;
-              } else if (options.skipLines || options.skipBefore) {
+              }
+              if (options.skipLines || options.skipBefore) {
                 before = before.replace(/([^\r\n]\r?\n?)$/, '$1\n');
               }
               linesAfter = new RegExp('^[\\r\\n]*((' + lineExp + '\\n)+)').exec(after);
               if (linesAfter) {
-                after = after.substring(linesAfter[0].length);
+                after = '\n' + after.substring(linesAfter[0].length);
                 text += '\n' + $.map(linesAfter[1].split('\n'), function(text, i) {
                   return text == '' ? null : options.match ? text.replace(options.match, '') : text.substring(options.before.length);
                 }).join('\n');
+              }
+              if (options.skipLines || options.skipAfter) {
+                after = after.replace(/^[\r\n]*/, '\n');
               }
             }
             
@@ -403,65 +412,7 @@
             }
           }
           this.restore({ text:before+text+after, bounds:{ start: before.length, end: before.length + text.length } });
-        },
-        
-        prefixLines: function(prefix, defaultText) {
-          var bounds = this.selectionBounds();
-          var start = bounds.start, end = bounds.end;
-          var str = $(this).val();
-          
-          var before = str.substring(0, bounds.start).replace(/[\r\n]+$/, ''), after = str.substring(bounds.end).replace(/^[\r\n]+/, '');
-          var contents = ((bounds.start == bounds.end) ? defaultText : str.substring(bounds.start, bounds.end)).replace(/\s*$/, '');
-          var previous_line_match = /\n([^\n]+)\s*$/.exec(before);
-          if (previous_line_match && previous_line_match[1].substring(0, prefix.length) != prefix) {
-            before += '\n';
-            bounds.start += 1;
-          }
-          if (after.substring(0, prefix.length) != prefix) {
-            after = '\n' + after;
-          }
-          
-          if (contents.substring(0, prefix.length) == prefix) {
-            var lines = contents.split(/\r?\n/), r = new RegExp('^' + prefix);
-            for (i = 0; i < lines.length; i++) {
-              lines[i] = lines[i].replace(r, '');
-            }
-            contents = lines.join('\n');
-          } else {
-            contents = prefix + contents.split(/\r?\n/).join('\n' + prefix);
-          }
-          
-          $(this).val(before + contents + '\n' + after);
-          this.setSelectionBounds(bounds.start, bounds.start + contents.length);
-          this.focus();
-        },
-        
-        cycleHeading: function() {
-          var str = $(this).val(), bounds = this.selectionBounds();
-          var before = str.substring(0, bounds.start), after = str.substring(bounds.end);
-          var heading = (bounds.start == bounds.end) ? "Heading text" : str.substring(bounds.start, bounds.end);
-          if (bounds.start > 0 && !(/\n$/.test(before))) { before += '\n'; bounds.start += 1; }
-          if (!/^\r?\n/.test(after)) { after = '\n' + after; }
-          if (match = /(\r?\n)$/.exec(heading)) {
-            after = match[1] + after;
-            heading = heading.substring(0, heading.length - match[1].length);
-          }
-          heading = heading.replace(/\n/g, ' ');
-          var underline = '\n';
-          if (match = /^(\r?\n)?z(\=+|\-+)(\r?\n)*/.exec(after)) {
-            after = after.substring(match[0].length);
-            if (match[2][0] == '-') {
-              for (i = 0; i < heading.length; i++) { underline += '='; }
-              underline += '\n';
-            }
-            underline += '\n';
-          } else {
-            for (i = 0; i < heading.length; i++) { underline += '-'; }
-          }
-          $(this).val(before + heading + underline + after);
-          this.setSelectionBounds(this, bounds.start, bounds.start + heading.length);
-          this.focus();
-        },
+        }
       }
     }
   });
