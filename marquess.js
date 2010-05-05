@@ -40,13 +40,14 @@
       this.undoStack = [];
       this.undoStack.pointer = -1;
       this.saveUndoState();
+      
       $(this.editor).bind('input', function(e) {
         if (!self.startedTyping) {
           self.saveUndoState();
           self.startedTyping = true;
         }
         if (self.options.autoUpdate && !self.updater) {
-          self.updater = window.setTimeout(function() { self.updatePreview() }, self.options.autoUpdate);
+          self.updater = window.setTimeout(function() { self.updatePreview(false); }, self.options.autoUpdate);
         }
       });
     },
@@ -116,15 +117,20 @@
     
     executeCommand: function(command) {
       command = $.ui.marquess.commands[command];
-      if (command && command.fn) {
-        command.fn(this);
+      if (command) {
+        if (command.fn) {
+          command.fn(this);
+        } else if (command.transform) {
+          this.transform(command.transform);
+        }
       }
     },
     
-    wrapOrInsert: function(before, after, defaultText) {
+    transform: function(options) {
       if (this.startedTyping) { this.saveUndoState(); }
       this.undoStack[this.undoStack.pointer].bounds = this.editor.selectionBounds();
-      this.editor.wrapOrInsert(before, after, defaultText);
+      options = options || {};
+      this.editor.transform(options);
       this.updatePreview(false);
       this.saveUndoState();
     },
@@ -180,12 +186,15 @@
     },
     
     saveUndoState:function() {
-      this.undoStack = this.undoStack.slice(0, this.undoStack.pointer + 1);
-      this.undoStack.push(this.editor.state());
-      this.undoStack.pointer = this.undoStack.length - 1;
-      this.startedTyping = false;
-      this.enableButton('undo', this.undoStack.pointer > 0);
-      this.enableButton('redo', false);
+      var state = this.editor.state();
+      if (this.undoStack.pointer < 0 || this.undoStack[this.undoStack.pointer].text != state.text) {
+        this.undoStack = this.undoStack.slice(0, this.undoStack.pointer + 1);
+        this.undoStack.push(state);
+        this.undoStack.pointer = this.undoStack.length - 1;
+        this.startedTyping = false;
+        this.enableButton('undo', this.undoStack.pointer > 0);
+        this.enableButton('redo', false);
+      }
     },
     
     undo:function() {
@@ -233,14 +242,24 @@
     getter: "html",
     commands: {
       bold: {
-        name:'Bold',
-        shortcut:'Meta+B',
-        fn: function(editor) { editor.wrapOrInsert('**', '**', '**Bold text**'); }
+        name:      'Bold',
+        shortcut:  'Meta+B',
+        transform: {
+          inline:      true,
+          before:      '__',
+          after:       '__',
+          defaultText: 'Bold text'
+        }
       },
       italic: {
-        name:'Italic',
-        shortcut:'Meta+I',
-        fn: function(editor) { editor.wrapOrInsert('*', '*', '*Italic text*'); }
+        name:      'Italic',
+        shortcut:  'Meta+I',
+        transform: {
+          inline:      true,
+          before:      '*',
+          after:       '*',
+          defaultText: 'Italic text'
+        }
       },
       heading: {
         name:'Cycle heading',
@@ -248,18 +267,31 @@
         fn: function(editor) { editor.cycleHeading(); }
       },
       bulleted_list: {
-        name: 'Bulleted list',
-        shortcut:'Meta+U',
-        fn: function(editor) { editor.prefixLines('  - ', 'List item') }
+        name:      'Bulleted list',
+        shortcut:  'Meta+U',
+        transform: {
+          before:      '  - ',
+          defaultText: 'List item',
+          skipLines:   true
+        }
       },
       numbered_list: {
-        name: 'Numbered list',
-        shortcut:'Meta+O',
-        fn: function(editor) { editor.prefixLines('  1. ', 'List item') }
+        name:      'Numbered list',
+        shortcut:  'Meta+O',
+        transform: {
+          defaultText: 'List item',
+          skipLines:   true,
+          match:       /^  [0-9]+\. /,
+          each: function(text, i) { return '  ' + (i + 1) + '. ' + text; }
+        }
       },
       blockquote: {
-        name: 'Blockquote',
-        fn: function(editor) { editor.prefixLines('  > ', 'Blockquote') }
+        name:      'Blockquote',
+        transform: {
+          before:      '  > ',
+          defaultText: 'Blockquote',
+          skipLines:   true
+        }
       },
       undo: {
         name: 'Undo',
@@ -282,6 +314,12 @@
     },
     strategies: {
       common: {
+        log: function(msg) {
+          if(window.console && console.log) {
+            console.log(msg);
+          }
+        },
+        
         state: function() {
           return { text:$(this).val(), bounds:this.selectionBounds() };
         },
@@ -300,21 +338,71 @@
           this.setSelectionRange(start, end);
         },
         
-        wrapOrInsert: function(before, after, defaultText) {
-          var bounds = this.selectionBounds();
-          var start = bounds.start, end = bounds.end;
-          var str = $(this).val();
+        transform: function(options) {
+          var state  = this.state(),
+              before = state.text.substring(0, state.bounds.start),
+              after  = state.text.substring(state.bounds.end),
+              text   = state.text.substring(state.bounds.start, state.bounds.end),
+              empty  = state.bounds.start == state.bounds.end;
           
-          if (start == end && str.substring(end, end + after.length) == after) {
-            bs = str.substring(0, start).replace(/([ \t]*)$/, after + '$1');
-            $(this).val(bs + str.substring(end + after.length));
-            this.setSelectionBounds(bs.length, bs.length);
+          if (options.inline) {
+            if (empty) {
+              if (after.substring(0, options.after.length) == options.after) {
+                before = before.replace(/([ \t]*)$/, options.after + '$1');
+                after = after.substring(options.after.length);
+              } else {
+                before += (options.before || '');
+                after = (options.after || '') + after;
+                text = options.defaultText || 'text';
+              }
+            } else {
+              if (before.substring(before.length - options.before.length) == options.before && after.substring(0, options.after.length) == options.after) {
+                before = before.substring(0, before.length - options.before.length);
+                after = after.substring(options.after.length);
+              } else {
+                before += (options.before || '');
+                after = (options.after || '') + after;
+              }
+            }
           } else {
-            var toInsert = (start == end ? defaultText : before + str.substring(start, end) + after);
-            $(this).val(str.substring(0, start) + toInsert + str.substring(end));
-            this.setSelectionBounds(start + before.length, start + toInsert.length - after.length);
+            if (empty) { text = options.defaultText || 'Text'; }
+            
+            if (options.match || options.before) {
+              o = (options.match || options.before).toString().replace(/(^\/\^?|\/[ig]*$)/g, '');
+              lineExp = '(' + o + '([^\\r\\n]+)\\n?)';
+              linesBefore = new RegExp('(^|[\\r\\n])(' + lineExp + '+)$').exec(before);
+              if (linesBefore) {
+                before = before.substring(0, before.length - linesBefore[2].length);
+                text = $.map(linesBefore[2].split('\n'), function(text, i) {
+                  return text == '' ? null : options.match ? text.replace(options.match, '') : text.substring(options.before.length);
+                }).join('\n') + '\n' + text;
+              } else if (options.skipLines || options.skipBefore) {
+                before = before.replace(/([^\r\n]\r?\n?)$/, '$1\n');
+              }
+              linesAfter = new RegExp('^[\\r\\n]*((' + lineExp + '\\n)+)').exec(after);
+              if (linesAfter) {
+                after = after.substring(linesAfter[0].length);
+                text += '\n' + $.map(linesAfter[1].split('\n'), function(text, i) {
+                  return text == '' ? null : options.match ? text.replace(options.match, '') : text.substring(options.before.length);
+                }).join('\n');
+              }
+            }
+            
+            lines = text.replace(/(^\s*|\s*$)/g, '').split('\n');
+            if (options.each) {
+              text = $.map(lines, options.each).join('\n');
+              if (options.match && (m = options.match.exec(text))) {
+                before += m[0];
+                text = text.substring(m[0].length);
+              }
+              after = '\n' + after;
+            } else {
+              before += (options.before || '');
+              text = lines.join((options.after || '') + '\n' + (options.before || ''));
+              after = (options.after || '') + '\n' + after;
+            }
           }
-          this.focus();
+          this.restore({ text:before+text+after, bounds:{ start: before.length, end: before.length + text.length } });
         },
         
         prefixLines: function(prefix, defaultText) {
