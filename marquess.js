@@ -80,7 +80,7 @@
             if (command) {
               title = command.name;
               if (command.shortcut) {
-                title += ' (' + command.shortcut.replace('Meta+', $.os.mac ? '&#x2318;' : 'Ctrl+') + ')';
+                title += ' (' + command.shortcut.replace('Meta', $.os.mac ? '&#x2318;' : 'Ctrl') + ')';
               }
               var button = $('<li><a href="#" class="marquess-toolbar-button ' + button_name + '" title="' + title + '"><span>' + command.name + '</span></a></li>').appendTo(r).find('a');
               if (opts.title) { button.addClass('with-title'); }
@@ -100,7 +100,8 @@
                 });
               }
               if (command.shortcut) {
-                $(self.editor).bind('keydown', command.shortcut, function() { button.click(); return false; });
+                var f = function() { button.click(); return false; };
+                $(self.editor).bind('keydown', command.shortcut, f).bind('keydown', command.shortcut.replace('Meta', 'Ctrl'), f);
               }
               self.buttons[button_name] = button;
             }
