@@ -50,6 +50,13 @@
           self.updater = window.setTimeout(function() { self.updatePreview(false); }, self.options.autoUpdate);
         }
       });
+      
+      $(this.editor).keypress(function(e) {
+        if (e.which == 13) {
+          self.newline();
+          return false;
+        }
+      });
     },
 
     buildUI: function() {
@@ -80,7 +87,7 @@
             if (command) {
               title = command.name;
               if (command.shortcut) {
-                title += ' (' + command.shortcut.replace('Meta+', $.os.mac ? '&#x2318;' : 'Ctrl+') + ')';
+                title += ' (' + command.shortcut.replace('Meta', $.os.mac ? '&#x2318;' : 'Ctrl') + ')';
               }
               var button = $('<li><a href="#" class="marquess-toolbar-button ' + button_name + '" title="' + title + '"><span>' + command.name + '</span></a></li>').appendTo(r).find('a');
               if (opts.title) { button.addClass('with-title'); }
@@ -100,7 +107,8 @@
                 });
               }
               if (command.shortcut) {
-                $(self.editor).bind('keydown', command.shortcut, function() { button.click(); return false; });
+                var f = function() { button.click(); return false; };
+                $(self.editor).bind('keydown', command.shortcut, f).bind('keydown', command.shortcut.replace('Meta', 'Ctrl'), f);
               }
               self.buttons[button_name] = button;
             }
@@ -127,10 +135,16 @@
     },
     
     transform: function(options) {
-      if (this.startedTyping) { this.saveUndoState(); }
-      this.undoStack[this.undoStack.pointer].bounds = this.editor.selectionBounds();
+      if (this.startedTyping) { this.saveUndoState(true); }
       options = options || {};
       this.editor.transform(options);
+      this.updatePreview(false);
+      this.saveUndoState();
+    },
+    
+    newline: function(options) {
+      if (this.startedTyping) { this.saveUndoState(true); }
+      this.editor.newline();
       this.updatePreview(false);
       this.saveUndoState();
     },
@@ -169,7 +183,7 @@
       return this.options.autoUpdate;
     },
     
-    saveUndoState:function() {
+    saveUndoState:function(modifyBounds) {
       var state = this.editor.state();
       if (this.undoStack.pointer < 0 || this.undoStack[this.undoStack.pointer].text != state.text) {
         this.undoStack = this.undoStack.slice(0, this.undoStack.pointer + 1);
@@ -179,6 +193,7 @@
         this.enableButton('undo', this.undoStack.pointer > 0);
         this.enableButton('redo', false);
       }
+      if (modifyBounds) { this.undoStack[this.undoStack.pointer].bounds = this.editor.selectionBounds(); }
     },
     
     undo:function() {
@@ -312,7 +327,7 @@
         
         restore: function(state) {
           $(this).val(state.text);
-          this.setSelectionBounds(state.bounds.start, state.bounds.end);
+          this.setSelectionBounds(state.bounds.start, state.bounds.end || state.bounds.start);
           this.focus();
         },
         
@@ -412,6 +427,30 @@
             }
           }
           this.restore({ text:before+text+after, bounds:{ start: before.length, end: before.length + text.length } });
+        },
+        
+        newline: function() {
+          var state  = this.state(),
+              before = state.text.substring(0, state.bounds.start),
+              after  = state.text.substring(state.bounds.end),
+              text   = '\n';
+          
+          if (previousLine = /[^\r\n]+$/.exec(before)) {
+            var indent = /^[ \t\>\*\-0-9\.]*/.exec(previousLine[0])[0];
+            if (indent == previousLine) {
+              before = before.substring(0, before.length - indent.length);
+            } else {
+              indent = $.map(indent.split('.'), function(text, i) {
+                if (m = /[0-9]+$/.exec(text)) {
+                  text = text.substring(0, text.length - m[0].length) + (parseInt(m[0]) + 1);
+                }
+                return text;
+              }).join('.');
+              text += indent;
+            }
+          }
+          
+          this.restore({ text:before+text+after, bounds:{ start: before.length + text.length } });
         }
       }
     }
