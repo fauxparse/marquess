@@ -14,14 +14,10 @@
   
   <script type="text/javascript" charset="utf-8">
     $(function() {
-      if (/chrome/.test(navigator.userAgent.toLowerCase())) {
-        // Chrome won't let us load local files
+      $.get('README.md', function(data) {
+        if (data != '') { $('textarea.html').val(data); }
         $('textarea.html').marquess({ log: true });
-      } else {
-        $.get('README.md', function(data) {
-          $('textarea.html').val(data).marquess({ log: true });
-        });
-      }
+      });
     });
   </script>
 </body>
