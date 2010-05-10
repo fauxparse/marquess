@@ -5,7 +5,7 @@
       autoUpdate: 250,
       preview: true,
       toolbar: [
-        [ 'bold', 'italic', '|', 'heading', 'bulleted_list', 'numbered_list', 'blockquote', '|', 'link', 'picture' ],
+        [ 'bold', 'italic', '|', 'heading', 'bulleted_list', 'numbered_list', 'blockquote', '|', 'link', 'image' ],
         [ 'undo', 'redo' ],
         [ 'preview', [ 'update', { title:true } ] ]
       ]
@@ -224,6 +224,11 @@
       }
     },
     
+    dialog: function(id) {
+      $.ui.marquess.current = this;
+      return $.ui.marquess.getDialog(id).dialog('open');
+    },
+    
     log: function(msg) {
       if(!this.options.log) return;
       if(window.console && console.log) {
@@ -294,6 +299,20 @@
           skipLines:   true
         }
       },
+      link: {
+        name: 'Insert link',
+        shortcut: 'Meta+L',
+        fn: function(editor) {
+          editor.dialog('link').find('input[name=link_text]').val(editor.editor.selectedText()).each(function() { this.select().focus(); });
+        }
+      },
+      image: {
+        name: 'Insert image',
+        shortcut: 'Meta+P',
+        fn: function(editor) {
+          editor.dialog('image').find('input[name=image_title]').val(editor.editor.selectedText()).closest('.marquess-dialog').find(':input').eq(0).each(function() { this.select().focus(); });
+        }
+      },
       undo: {
         name: 'Undo',
         shortcut:'Meta+Z',
@@ -313,6 +332,58 @@
         fn: function(editor) { editor.updatePreview(); }
       }
     },
+    dialogs: {
+      link: {
+        title:     'Insert a link',
+        content:   '<ol class="form"><li><label for="marquess_link_text">Link text:</label><input class="text" type="text" name="link_text" id="marquess_link_text" /></li><li><label for="marquess_link_url">Link URL:</label><input class="text" type="text" name="link_url" id="marquess_link_url" /></li></ol>',
+        modal:     true,
+        resizable: false,
+        buttons:   {
+          'OK': function() {
+            url = $('#marquess_link_url').val();
+            if (url[0] != '/' && !(/^https?:\/\//.test(url))) {
+              url = 'http://' + url;
+            }
+            $.ui.marquess.current.transform({
+              defaultText: 'link text',
+              text: $('#marquess_link_text').val(),
+              before: '[',
+              after: '](' + url + ')',
+              inline: true
+            });
+            $(this).dialog("close");
+          },
+          'Cancel': function() {
+            $(this).dialog("close");
+          }
+        }
+      },
+      image: {
+        title:     'Insert an image',
+        content:   '<ol class="form"><li><label for="marquess_image_url">Image URL:</label><input class="text" type="text" name="image_url" id="marquess_image_url" /></li><li><label for="marquess_image_title">Image title:</label><input class="text" type="text" name="image_title" id="marquess_image_title" /></li></ol>',
+        modal:     true,
+        resizable: false,
+        buttons:   {
+          'OK': function() {
+            url = $('#marquess_image_url').val();
+            if (url[0] != '/' && !(/^https?:\/\//.test(url))) {
+              url = 'http://' + url;
+            }
+            $.ui.marquess.current.transform({
+              defaultText: 'image title',
+              text: $('#marquess_image_title').val(),
+              before: '![',
+              after: '](' + url + ')',
+              inline: true
+            });
+            $(this).dialog("close");
+          },
+          'Cancel': function() {
+            $(this).dialog("close");
+          }
+        }
+      }
+    },
     strategies: {
       common: {
         log: function(msg) {
@@ -323,6 +394,11 @@
         
         state: function() {
           return { text:$(this).val(), bounds:this.selectionBounds() };
+        },
+        
+        selectedText: function() {
+          var state = this.state();
+          return state.text.substring(state.bounds.start, state.bounds.end);
         },
         
         restore: function(state) {
@@ -343,7 +419,7 @@
           var state  = this.state(),
               before = state.text.substring(0, state.bounds.start),
               after  = state.text.substring(state.bounds.end),
-              text   = state.text.substring(state.bounds.start, state.bounds.end),
+              text   = options.text || state.text.substring(state.bounds.start, state.bounds.end),
               empty  = state.bounds.start == state.bounds.end;
           
           if (options.inline) {
@@ -453,6 +529,16 @@
           this.restore({ text:before+text+after, bounds:{ start: before.length + text.length } });
         }
       }
+    },
+    
+    getDialog: function(id) {
+      if (!this._dialogs) { this._dialogs = {}; }
+      if (!this._dialogs[id]) {
+        opts = this.dialogs[id];
+        opts.autoOpen = false;
+        this._dialogs[id] = $('<div class="marquess-dialog" id="marquess_' + id + '_dialog"></div>').html(opts.content).dialog(opts);
+      }
+      return this._dialogs[id];
     }
   });
   

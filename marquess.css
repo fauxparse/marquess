@@ -119,7 +119,7 @@
 .marquess-toolbar li a.numbered_list span { background-position: 0px  -64px; }
 .marquess-toolbar li a.blockquote    span { background-position: 0px  -80px; }
 .marquess-toolbar li a.link          span { background-position: 0px  -96px; }
-.marquess-toolbar li a.picture       span { background-position: 0px -112px; }
+.marquess-toolbar li a.image         span { background-position: 0px -112px; }
 .marquess-toolbar li a.cut           span { background-position: 0px -128px; }
 .marquess-toolbar li a.copy          span { background-position: 0px -144px; }
 .marquess-toolbar li a.paste         span { background-position: 0px -160px; }
