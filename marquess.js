@@ -52,8 +52,26 @@
       });
       
       $(this.editor).keypress(function(e) {
-        if (e.which == 13) {
+        switch (e.which) {
+        case 13: // ↩
           self.newline();
+          return false;
+        case 40:  // (
+        case 42:  // *
+        case 91:  // [
+        case 95:  // _
+        case 96:  // `
+          var str = unescape('%' + e.which.toString(16)), str2 = str;
+          switch(e.which) {
+          case 40:  str2 = ')'; break;
+          case 91:  str2 = ']'; break;
+          }
+          self.transform({
+            before:str,
+            after:str2,
+            defaultText:false,
+            inline:true
+          });
           return false;
         }
       });
@@ -430,7 +448,7 @@
               } else {
                 before += (options.before || '');
                 after = (options.after || '') + after;
-                text = options.defaultText || 'text';
+                text = options.defaultText == false ? '' : options.defaultText || 'text';
               }
             } else {
               if (before.substring(before.length - options.before.length) == options.before && after.substring(0, options.after.length) == options.after) {
