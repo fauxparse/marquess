@@ -8,5 +8,7 @@ It uses the [Showdown][1] library to provide live previews, and
 although there's nothing to stop you swapping these out with
 your own CSS. Go nuts.
 
+![image title](http://fauxparse.github.com/marquess/markdown.png)
+
   [1]: http://www.attacklab.net/
   [2]: http://www.famfamfam.com/lab/icons/silk/
