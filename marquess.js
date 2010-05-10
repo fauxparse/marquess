@@ -512,7 +512,7 @@
               text   = '\n';
           
           if (previousLine = /[^\r\n]+$/.exec(before)) {
-            var indent = /^[ \t\>\*\-0-9\.]*/.exec(previousLine[0])[0];
+            var indent = /^[ \t]+[ \t\>\*\-0-9\.]*/.exec(previousLine[0])[0];
             if (indent == previousLine) {
               before = before.substring(0, before.length - indent.length);
             } else {
